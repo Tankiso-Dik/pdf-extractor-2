@@ -49,6 +49,3 @@ def upload_pdf():
                         zf.write(page_path, page_filename)
 
             return send_file(output_zip_path, as_attachment=True, download_name="pages.zip", mimetype="application/zip")
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)

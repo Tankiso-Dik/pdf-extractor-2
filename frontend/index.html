@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Page Extractor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Pushes content to the bottom */
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: url('thepage.png'); /* Corrected image name */
+            background-size: cover; /* Cover the entire background */
+            background-position: center; /* Center the image */
+            background-repeat: no-repeat; /* Do not repeat the image */
+        }
+        .container {
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px; /* Space from the bottom edge */
+            /* Removed background-color and box-shadow */
+        }
+        .input-group {
+            display: flex;
+            gap: 10px; /* Space between input and button */
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+        }
+        input[type="file"] {
+            border: none; /* Removed border */
+            padding: 8px;
+            border-radius: 4px;
+            flex-grow: 1; /* Allows input to take available space */
+            box-sizing: border-box;
+            background-color: transparent; /* Transparent background */
+            color: white; /* White text for file input */
+        }
+        /* Style for the file input button (browser-specific, often hard to style directly) */
+        input[type="file"]::-webkit-file-upload-button {
+            background-color: transparent;
+            color: white;
+            border: none; /* Removed border */
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        button {
+            background-color: transparent; /* Transparent background */
+            color: white;
+            padding: 8px 15px;
+            border: none; /* Removed border */
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap; /* Prevents button text from wrapping */
+        }
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.2); /* Subtle hover effect */
+        }
+        #status {
+            margin-top: 15px;
+            color: white;
+            font-weight: bold;
+        }
+        #error {
+            margin-top: 15px;
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <input type="file" id="pdfFile" accept=".pdf">
+            <button onclick="uploadPdf()">Extract Pages</button>
+        </div>
+        <div id="status"></div>
+        <div id="error"></div>
+    </div>
+
+    <script>
+        async function uploadPdf() {
+            const pdfFile = document.getElementById('pdfFile').files[0];
+            const statusDiv = document.getElementById('status');
+            const errorDiv = document.getElementById('error');
+
+            statusDiv.textContent = '';
+            errorDiv.textContent = '';
+
+            if (!pdfFile) {
+                errorDiv.textContent = 'Please select a PDF file.';
+                return;
+            }
+
+            statusDiv.textContent = 'Uploading and processing...';
+
+            const formData = new FormData();
+            formData.append('pdf_file', pdfFile);
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'pages.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    statusDiv.textContent = 'ZIP file downloaded successfully!';
+                } else {
+                    const errorText = await response.text();
+                    errorDiv.textContent = `Error: ${response.status} - ${errorText}`;
+                }
+            } catch (error) {
+                errorDiv.textContent = `Network error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
